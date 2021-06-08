@@ -4,13 +4,14 @@
   "description": "Rafael's onboard project to learn more about backend and Taqtile",
   "main": "index.js",
   "scripts": {
-    "test": "npm test"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/indigotech/onboard-rafael-rascovit-backend.git"
   },
-  "author": "Rafael Rascovit",
+  "keywords": [],
+  "author": "",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/indigotech/onboard-rafael-rascovit-backend/issues"
@@ -19,6 +20,10 @@
   "dependencies": {
     "express": "4.17.1",
     "express-graphql": "0.12.0",
+    "apollo-server": "2.25.0",
     "graphql": "15.5.0"
+  },
+  "devDependencies": {
+    "typescript": "4.3.2"
   }
 }
