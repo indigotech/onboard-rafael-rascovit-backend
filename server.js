@@ -1,20 +1,21 @@
-var express = require('express');
-var { graphqlHTTP } = require('express-graphql');
-var { buildSchema } = require('graphql');
+const express = require('express');
+const { graphqlHTTP } = require('express-graphql');
+const { buildSchema } = require('graphql');
  
-var schema = buildSchema(`
+const schema = buildSchema(`
   type Query {
     hello: String
   }
 `);
 
-var root = {
+const root = {
   hello: () => {
     return 'Hello world!';
   },
 };
 
-var app = express();
+const app = express();
+
 app.use('/', graphqlHTTP({
   schema: schema,
   rootValue: root,
