@@ -2,14 +2,12 @@
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
-    "lib": ["dom", "es6"],
+    "lib": ["dom", "es5", "es6"],
+    "moduleResolution": "node",
     "outDir": "dist",
-    "rootDir": "src",
-    "removeComments": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true
   },
   "exclude": ["node_modules"],
   "include": ["src/**/*.ts"]
