@@ -2,7 +2,7 @@
   "name": "onboard-rafael-rascovit-backend",
   "version": "1.0.0",
   "description": "Rafael's onboard project to learn more about backend and Taqtile",
-  "main": "server.ts",
+  "main": "src/main.ts",
   "scripts": {
     "start": "ts-node src/main.ts",
     "dev": "nodemon src/main.ts",
@@ -21,6 +21,7 @@
   "homepage": "https://github.com/indigotech/onboard-rafael-rascovit-backend#readme",
   "dependencies": {
     "apollo-server": "2.25.0",
+    "bcrypt": "^5.0.1",
     "express": "4.17.1",
     "express-graphql": "0.12.0",
     "graphql": "15.5.0",

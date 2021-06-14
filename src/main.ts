@@ -2,7 +2,7 @@ import { ApolloServer } from 'apollo-server';
 import resolvers from './resolvers';
 import typeDefs from './type-defs';
 import 'reflect-metadata';
-import { createConnection, Connection } from 'typeorm';
+import { createConnection } from 'typeorm';
 import { User } from './entity/user';
 
 createConnection({
@@ -16,16 +16,7 @@ createConnection({
   synchronize: true,
   logging: false,
 })
-  .then((connection) => {
-    let user = new User();
-    user.firstName = 'Rafael';
-    user.lastName = 'Rascovit';
-    user.isActive = true;
-
-    return connection.manager.save(user).then((user) => {
-      console.log('User has been saved', user.id);
-    });
-  })
+  .then(() => {})
   .catch((error) => console.log(error));
 
 const server = new ApolloServer({ resolvers, typeDefs });
