@@ -1,6 +1,6 @@
 import { getRepository } from 'typeorm';
 import { User } from './entity/user';
-import * as bcrypt from "bcrypt";
+import * as bcrypt from 'bcrypt';
 
 const saltRounds = 10;
 
@@ -19,16 +19,14 @@ export default {
         select: ['id', 'name', 'email', 'password', 'birthDate'],
       });
       return {
-        users: response
+        users: response,
       };
     },
   },
   Mutation: {
     createUser: async (_source, args) => {
       const email = await getRepository(User).findOne({
-        where: {
-          email: args.email,
-        },
+        email: args.email,
       });
       if (args.password.length < 7) {
         return;
