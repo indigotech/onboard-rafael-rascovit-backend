@@ -74,20 +74,23 @@ describe('Create user mutation test', () => {
   it('should fail to create user due to invalid e-mail', async () => {
     input.email = 'test@';
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].message).to.equal('Unexpected error value: "E-mail inválido"');
+    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
+    expect(response.body.errors[0].message).to.equal('E-mail inválido');
   });
 
   it('should fail to create user due to email already registered', async () => {
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].message).to.equal('Unexpected error value: "E-mail ja cadastrado"');
+    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
+    expect(response.body.errors[0].message).to.equal('E-mail ja cadastrado');
   });
 
   it('should fail to create user due to short password', async () => {
     input.email = 'test2@test.com';
     input.password = 'test1';
     const response = await postGraphQL(mutation, input);
+    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
     expect(response.body.errors[0].message).to.equal(
-      'Unexpected error value: "Senha precisa conter 7 dígitos com pelo menos uma letra e um número"',
+      'Senha precisa conter 7 dígitos com pelo menos uma letra e um número',
     );
   });
 
@@ -95,8 +98,9 @@ describe('Create user mutation test', () => {
     input.email = 'test3@test.com';
     input.password = 'testtest';
     const response = await postGraphQL(mutation, input);
+    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
     expect(response.body.errors[0].message).to.equal(
-      'Unexpected error value: "Senha precisa conter 7 dígitos com pelo menos uma letra e um número"',
+      'Senha precisa conter 7 dígitos com pelo menos uma letra e um número',
     );
   });
 
@@ -104,16 +108,16 @@ describe('Create user mutation test', () => {
     input.email = 'test4@test.com';
     input.birthDate = '11/07/2022';
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].message).to.equal('Unexpected error value: "A data de nascimento está no futuro"');
+    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
+    expect(response.body.errors[0].message).to.equal('A data de nascimento está no futuro');
   });
 
   it('should fail to create user due to out of pattern date', async () => {
     input.email = 'test5@test.com';
     input.birthDate = '1991/09/17';
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].message).to.equal(
-      'Unexpected error value: "A data de nascimento deve estar no formato dd/mm/yyyy"',
-    );
+    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
+    expect(response.body.errors[0].message).to.equal('A data de nascimento deve estar no formato dd/mm/yyyy');
   });
 });
 
