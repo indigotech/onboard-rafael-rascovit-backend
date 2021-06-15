@@ -11,7 +11,7 @@ const server = new ApolloServer({ resolvers, typeDefs });
 export async function runServer() {
   const config: PostgresConnectionOptions = {
     type: 'postgres',
-    url: process.env.TYPEORM_URL,
+    url: process.env.DATABASE_URL,
     entities: [User],
     synchronize: true,
     logging: false,
@@ -22,9 +22,8 @@ export async function runServer() {
   console.log(`Running server at ${url}.`);
 }
 
-export async function closeServer() {
+export function closeServer() {
   getConnection().close();
   server.stop();
   console.log(`Server stoped.`);
 }
-

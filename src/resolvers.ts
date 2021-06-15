@@ -5,21 +5,17 @@ import * as bcrypt from 'bcrypt';
 const saltRounds = 10;
 
 function isFutureDate(birthDate) {
-  let now = new Date();
-  let month = (now.getMonth() + 1).toString();
-  let newMonth = month.length == 1 ? '0' + month : month;
-  let day = now.getDate().toString();
-  let newDay = day.length == 1 ? '0' + day : day;
-  let year = now.getFullYear().toString();
+  const now = new Date();
+  const month = (now.getMonth() + 1).toString();
+  const newMonth = month.length == 1 ? '0' + month : month;
+  const day = now.getDate().toString();
+  const newDay = day.length == 1 ? '0' + day : day;
+  const year = now.getFullYear().toString();
 
-  let date = year + '/' + newMonth + '/' + newDay;
-  let newBirth = birthDate.split('/')[2] + '/' + birthDate.split('/')[1] + '/' + birthDate.split('/')[0];
+  const date = year + '/' + newMonth + '/' + newDay;
+  const newBirth = birthDate.split('/')[2] + '/' + birthDate.split('/')[1] + '/' + birthDate.split('/')[0];
 
-  if(Date.parse(newBirth) > Date.parse(date)){
-    return true;
-  } else {
-    return false;
-  }
+  return Date.parse(newBirth) > Date.parse(date);
 }
 
 export default {
