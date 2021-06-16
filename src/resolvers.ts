@@ -51,7 +51,7 @@ export default {
       if (!passRegex.test(args.password)) {
         throw new HandleError('Senha precisa conter 7 dígitos com pelo menos uma letra e um número', 400);
       } else if (email) {
-        throw new HandleError('E-mail ja cadastrado', 400);
+        throw new HandleError('E-mail ja cadastrado', 409);
       } else if (!emailRegex.test(args.email)) {
         throw new HandleError('E-mail inválido', 400);
       } else if (!dtRegex.test(args.birthDate)) {

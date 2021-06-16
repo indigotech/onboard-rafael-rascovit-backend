@@ -80,7 +80,7 @@ describe('Create user mutation test', () => {
 
   it('should fail to create user due to email already registered', async () => {
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
+    expect(response.body.errors[0].extensions.exception.code).to.equal(409);
     expect(response.body.errors[0].message).to.equal('E-mail ja cadastrado');
   });
 
