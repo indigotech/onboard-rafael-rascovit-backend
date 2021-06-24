@@ -4,6 +4,20 @@ import * as bcrypt from 'bcrypt';
 
 const saltRounds = 10;
 
+function isFutureDate(birthDate) {
+  const now = new Date();
+  const month = (now.getMonth() + 1).toString();
+  const newMonth = month.length == 1 ? '0' + month : month;
+  const day = now.getDate().toString();
+  const newDay = day.length == 1 ? '0' + day : day;
+  const year = now.getFullYear().toString();
+
+  const date = year + '/' + newMonth + '/' + newDay;
+  const newBirth = birthDate.split('/')[2] + '/' + birthDate.split('/')[1] + '/' + birthDate.split('/')[0];
+
+  return Date.parse(newBirth) > Date.parse(date);
+}
+
 export default {
   Query: {
     hello: () => 'Hello, world!',
@@ -25,13 +39,24 @@ export default {
   },
   Mutation: {
     createUser: async (_source, args) => {
+      var dtRegex =
+        /^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[13-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$/;
+      const emailRegex =
+        /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{7,}$/;
       const email = await getRepository(User).findOne({
         email: args.email,
       });
-      if (args.password.length < 7) {
-        return;
+      if (!passRegex.test(args.password)) {
+        throw 'Senha precisa conter 7 dígitos com pelo menos uma letra e um número';
       } else if (email) {
-        return;
+        throw 'E-mail ja cadastrado';
+      } else if (!emailRegex.test(args.email)) {
+        throw 'E-mail inválido';
+      } else if (!dtRegex.test(args.birthDate)) {
+        throw 'A data de nascimento deve estar no formato dd/mm/yyyy';
+      } else if (isFutureDate(args.birthDate)) {
+        throw 'A data de nascimento está no futuro';
       }
       const user = new User();
       user.name = args.name;
