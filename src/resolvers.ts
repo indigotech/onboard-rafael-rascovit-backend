@@ -1,6 +1,7 @@
 import { getRepository } from 'typeorm';
 import { User } from './entity/user';
 import * as bcrypt from 'bcrypt';
+import { HandleError } from '../error';
 
 const saltRounds = 10;
 
@@ -48,15 +49,15 @@ export default {
         email: args.email,
       });
       if (!passRegex.test(args.password)) {
-        throw 'Senha precisa conter 7 dígitos com pelo menos uma letra e um número';
+        throw new HandleError('Senha precisa conter 7 dígitos com pelo menos uma letra e um número', 400);
       } else if (email) {
-        throw 'E-mail ja cadastrado';
+        throw new HandleError('E-mail ja cadastrado', 409);
       } else if (!emailRegex.test(args.email)) {
-        throw 'E-mail inválido';
+        throw new HandleError('E-mail inválido', 400);
       } else if (!dtRegex.test(args.birthDate)) {
-        throw 'A data de nascimento deve estar no formato dd/mm/yyyy';
+        throw new HandleError('A data de nascimento deve estar no formato dd/mm/yyyy', 400);
       } else if (isFutureDate(args.birthDate)) {
-        throw 'A data de nascimento está no futuro';
+        throw new HandleError('A data de nascimento está no futuro', 400);
       }
       const user = new User();
       user.name = args.name;
