@@ -5,9 +5,21 @@ import { expect } from 'chai';
 import { runServer, closeServer } from '../src/main';
 import { getRepository } from 'typeorm';
 import { User } from '../src/entity/user';
+import * as jwt from 'jsonwebtoken';
+
+let token: string = '';
 
 function postGraphQL(queryOrMutation: string, input) {
-  return request('localhost:4000').post('/').send({ query: queryOrMutation, variables: input });
+  return request('localhost:4000')
+    .post('/')
+    .send({ query: queryOrMutation, variables: input })
+    .set({ Authentication: token });
+}
+
+function tokenCreate() {
+  return jwt.sign({ id: 1 }, process.env.JWT_SECRET, {
+    expiresIn: '4h',
+  });
 }
 
 before(async () => {
@@ -21,8 +33,8 @@ describe('Hello world query test', () => {
         hello
       }
     `;
+    token = await tokenCreate();
     const response = await postGraphQL(query, {});
-
     expect(response.statusCode).to.equal(200);
     expect(response.body.data.hello).to.be.eq('Hello, world!');
   });
@@ -44,6 +56,7 @@ describe('Create user mutation test', () => {
   let input: UserInput;
 
   beforeEach(() => {
+    token = '';
     input = {
       name: 'Teste',
       email: 'test1@test.com',
@@ -52,7 +65,23 @@ describe('Create user mutation test', () => {
     };
   });
 
+  it('should fail to create user due to token not found', async () => {
+    const response = await postGraphQL(mutation, input);
+    expect(response.body.errors[0].extensions.exception.code).to.equal(409);
+    expect(response.body.errors[0].message).to.equal('Token not found');
+  });
+
+  it('should fail to create user due to invalid token', async () => {
+    token = await jwt.sign({ id: 1 }, 'invalidToken', {
+      expiresIn: '4h',
+    });
+    const response = await postGraphQL(mutation, input);
+    expect(response.body.errors[0].extensions.exception.code).to.equal(401);
+    expect(response.body.errors[0].message).to.equal('Invalid token');
+  });
+
   it('should create an user in the test database and return his details', async () => {
+    token = await tokenCreate();
     const response = await postGraphQL(mutation, input);
     expect(response.statusCode).to.equal(200);
     expect(response.body.data.createUser.id).to.be.a('number');
@@ -72,6 +101,7 @@ describe('Create user mutation test', () => {
   });
 
   it('should fail to create user due to invalid e-mail', async () => {
+    token = await tokenCreate();
     input.email = 'test@';
     const response = await postGraphQL(mutation, input);
     expect(response.body.errors[0].extensions.exception.code).to.equal(400);
@@ -79,12 +109,14 @@ describe('Create user mutation test', () => {
   });
 
   it('should fail to create user due to email already registered', async () => {
+    token = await tokenCreate();
     const response = await postGraphQL(mutation, input);
     expect(response.body.errors[0].extensions.exception.code).to.equal(409);
     expect(response.body.errors[0].message).to.equal('E-mail ja cadastrado');
   });
 
   it('should fail to create user due to short password', async () => {
+    token = await tokenCreate();
     input.email = 'test2@test.com';
     input.password = 'test1';
     const response = await postGraphQL(mutation, input);
@@ -95,6 +127,7 @@ describe('Create user mutation test', () => {
   });
 
   it('should fail to create user due to without number password', async () => {
+    token = await tokenCreate();
     input.email = 'test3@test.com';
     input.password = 'testtest';
     const response = await postGraphQL(mutation, input);
@@ -105,6 +138,7 @@ describe('Create user mutation test', () => {
   });
 
   it('should fail to create user due to future date', async () => {
+    token = await tokenCreate();
     input.email = 'test4@test.com';
     input.birthDate = '11/07/2022';
     const response = await postGraphQL(mutation, input);
@@ -113,11 +147,97 @@ describe('Create user mutation test', () => {
   });
 
   it('should fail to create user due to out of pattern date', async () => {
+    token = await tokenCreate();
     input.email = 'test5@test.com';
     input.birthDate = '1991/09/17';
     const response = await postGraphQL(mutation, input);
     expect(response.body.errors[0].extensions.exception.code).to.equal(400);
     expect(response.body.errors[0].message).to.equal('A data de nascimento deve estar no formato dd/mm/yyyy');
+  });
+});
+
+describe('User details query test', () => {
+  const query = `
+    query User($id: Int!) {
+      user(id: $id){
+        id
+        name
+        email
+        birthDate
+      }
+    }
+  `;
+
+  beforeEach(() => {
+    token = '';
+  });
+
+  it('should fail to get user due to token not found', async () => {
+    const response = await postGraphQL(query, {id: 1});
+    expect(response.body.errors[0].extensions.exception.code).to.equal(409);
+    expect(response.body.errors[0].message).to.equal('Token not found');
+  });
+
+  it('should fail to get user due to invalid token', async () => {
+    token = await jwt.sign({ id: 1 }, 'invalidToken', {
+      expiresIn: '4h',
+    });
+    const response = await postGraphQL(query, {id: 1});
+    expect(response.body.errors[0].extensions.exception.code).to.equal(401);
+    expect(response.body.errors[0].message).to.equal('Invalid token');
+  });
+
+  it('should get user details', async () => {
+    token = await tokenCreate();
+    const response = await postGraphQL(query, {id: 1});
+    expect(response.statusCode).to.equal(200);
+    expect(response.body.data.user.id).to.be.a('number');
+    expect(response.body.data.user.name).to.equal('Teste');
+    expect(response.body.data.user.email).to.equal('test1@test.com');
+    expect(response.body.data.user.birthDate).to.equal('17/09/1991');
+  });
+
+  it('should fail to get user due to user not found', async () => {
+    token = await tokenCreate();
+    const response = await postGraphQL(query, {id: 2});
+    expect(response.body.errors[0].message).to.equal('Usuário não cadastrado');
+  })
+});
+
+describe('Login user mutation test', () => {
+  const mutation = `
+    mutation Login($email: String!, $password: String!, $rememberMe: Boolean!) {
+      login(email: $email, password: $password, rememberMe: $rememberMe) {
+        user{
+          id
+          name
+          email
+          password
+          birthDate
+        }
+        token
+      }
+    }
+  `;
+
+  let input: LoginInput;
+
+  beforeEach(() => {
+    input = {
+      email: 'test1@test.com',
+      password: 'test123',
+      rememberMe: false,
+    };
+  });
+
+  it('should login and return the user token and details', async () => {
+    const response = await postGraphQL(mutation, input);
+    expect(response.statusCode).to.equal(200);
+    expect(response.body.data.login.token).to.be.a('string');
+    expect(response.body.data.login.user.id).to.be.a('number');
+    expect(response.body.data.login.user.name).to.equal('Teste');
+    expect(response.body.data.login.user.email).to.equal('test1@test.com');
+    expect(response.body.data.login.user.birthDate).to.equal('17/09/1991');
   });
 });
 
@@ -131,4 +251,10 @@ export interface UserInput {
   email: string;
   password: string;
   birthDate: string;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+  rememberMe: boolean;
 }
