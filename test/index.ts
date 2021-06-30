@@ -35,8 +35,8 @@ describe('Hello world query test', () => {
     `;
     token = await tokenCreate();
     const response = await postGraphQL(query, {});
-    expect(response.statusCode).to.equal(200);
-    expect(response.body.data.hello).to.be.eq('Hello, world!');
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.hello).deep.eq('Hello, world!');
   });
 });
 
@@ -55,8 +55,8 @@ describe('Create user mutation test', () => {
 
   let input: UserInput;
 
-  beforeEach(() => {
-    token = '';
+  beforeEach(async () => {
+    token = await tokenCreate();
     input = {
       name: 'Teste',
       email: 'test1@test.com',
@@ -66,9 +66,10 @@ describe('Create user mutation test', () => {
   });
 
   it('should fail to create user due to token not found', async () => {
+    token = '';
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].extensions.exception.code).to.equal(409);
-    expect(response.body.errors[0].message).to.equal('Token not found');
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
+    expect(response.body.errors[0].message).deep.eq('Token not found');
   });
 
   it('should fail to create user due to invalid token', async () => {
@@ -76,83 +77,76 @@ describe('Create user mutation test', () => {
       expiresIn: '4h',
     });
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].extensions.exception.code).to.equal(401);
-    expect(response.body.errors[0].message).to.equal('Invalid token');
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
+    expect(response.body.errors[0].message).deep.eq('Invalid token');
   });
 
   it('should create an user in the test database and return his details', async () => {
-    token = await tokenCreate();
     const response = await postGraphQL(mutation, input);
-    expect(response.statusCode).to.equal(200);
-    expect(response.body.data.createUser.id).to.be.a('number');
-    expect(response.body.data.createUser.name).to.equal('Teste');
-    expect(response.body.data.createUser.email).to.equal('test1@test.com');
-    expect(response.body.data.createUser.birthDate).to.equal('17/09/1991');
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.createUser.id).deep.a('number');
+    expect(response.body.data.createUser.name).deep.eq('Teste');
+    expect(response.body.data.createUser.email).deep.eq('test1@test.com');
+    expect(response.body.data.createUser.birthDate).deep.eq('17/09/1991');
 
     const createdUser = await getRepository(User).findOne({
       id: response.body.data.createUser.id,
     });
-    expect(createdUser.id).to.be.a('number');
-    expect(createdUser.id).to.equal(response.body.data.createUser.id);
-    expect(createdUser.name).to.equal('Teste');
-    expect(createdUser.email).to.equal('test1@test.com');
-    expect(createdUser.birthDate).to.equal('17/09/1991');
-    expect(createdUser.password).to.be.a('String');
+    expect(createdUser.id).deep.a('number');
+    expect(createdUser.id).deep.eq(response.body.data.createUser.id);
+    expect(createdUser.name).deep.eq('Teste');
+    expect(createdUser.email).deep.eq('test1@test.com');
+    expect(createdUser.birthDate).deep.eq('17/09/1991');
+    expect(createdUser.password).deep.a('String');
   });
 
   it('should fail to create user due to invalid e-mail', async () => {
-    token = await tokenCreate();
     input.email = 'test@';
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
-    expect(response.body.errors[0].message).to.equal('E-mail inválido');
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(400);
+    expect(response.body.errors[0].message).deep.eq('E-mail inválido');
   });
 
   it('should fail to create user due to email already registered', async () => {
-    token = await tokenCreate();
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].extensions.exception.code).to.equal(409);
-    expect(response.body.errors[0].message).to.equal('E-mail ja cadastrado');
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(409);
+    expect(response.body.errors[0].message).deep.eq('E-mail ja cadastrado');
   });
 
   it('should fail to create user due to short password', async () => {
-    token = await tokenCreate();
     input.email = 'test2@test.com';
     input.password = 'test1';
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
-    expect(response.body.errors[0].message).to.equal(
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(400);
+    expect(response.body.errors[0].message).deep.eq(
       'Senha precisa conter 7 dígitos com pelo menos uma letra e um número',
     );
   });
 
   it('should fail to create user due to without number password', async () => {
-    token = await tokenCreate();
     input.email = 'test3@test.com';
     input.password = 'testtest';
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
-    expect(response.body.errors[0].message).to.equal(
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(400);
+    expect(response.body.errors[0].message).deep.eq(
       'Senha precisa conter 7 dígitos com pelo menos uma letra e um número',
     );
   });
 
   it('should fail to create user due to future date', async () => {
-    token = await tokenCreate();
     input.email = 'test4@test.com';
     input.birthDate = '11/07/2022';
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
-    expect(response.body.errors[0].message).to.equal('A data de nascimento está no futuro');
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(400);
+    expect(response.body.errors[0].message).deep.eq('A data de nascimento está no futuro');
   });
 
   it('should fail to create user due to out of pattern date', async () => {
-    token = await tokenCreate();
     input.email = 'test5@test.com';
     input.birthDate = '1991/09/17';
     const response = await postGraphQL(mutation, input);
-    expect(response.body.errors[0].extensions.exception.code).to.equal(400);
-    expect(response.body.errors[0].message).to.equal('A data de nascimento deve estar no formato dd/mm/yyyy');
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(400);
+    expect(response.body.errors[0].message).deep.eq('A data de nascimento deve estar no formato dd/mm/yyyy');
   });
 });
 
@@ -168,40 +162,39 @@ describe('User details query test', () => {
     }
   `;
 
-  beforeEach(() => {
-    token = '';
+  beforeEach(async () => {
+    token = await tokenCreate();
   });
 
   it('should fail to get user due to token not found', async () => {
-    const response = await postGraphQL(query, {id: 1});
-    expect(response.body.errors[0].extensions.exception.code).to.equal(409);
-    expect(response.body.errors[0].message).to.equal('Token not found');
+    token = '';
+    const response = await postGraphQL(query, { id: 1 });
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
+    expect(response.body.errors[0].message).deep.eq('Token not found');
   });
 
   it('should fail to get user due to invalid token', async () => {
     token = await jwt.sign({ id: 1 }, 'invalidToken', {
       expiresIn: '4h',
     });
-    const response = await postGraphQL(query, {id: 1});
-    expect(response.body.errors[0].extensions.exception.code).to.equal(401);
-    expect(response.body.errors[0].message).to.equal('Invalid token');
+    const response = await postGraphQL(query, { id: 1 });
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
+    expect(response.body.errors[0].message).deep.eq('Invalid token');
   });
 
   it('should get user details', async () => {
-    token = await tokenCreate();
-    const response = await postGraphQL(query, {id: 1});
-    expect(response.statusCode).to.equal(200);
-    expect(response.body.data.user.id).to.be.a('number');
-    expect(response.body.data.user.name).to.equal('Teste');
-    expect(response.body.data.user.email).to.equal('test1@test.com');
-    expect(response.body.data.user.birthDate).to.equal('17/09/1991');
+    const response = await postGraphQL(query, { id: 1 });
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.user.id).deep.a('number');
+    expect(response.body.data.user.name).deep.eq('Teste');
+    expect(response.body.data.user.email).deep.eq('test1@test.com');
+    expect(response.body.data.user.birthDate).deep.eq('17/09/1991');
   });
 
   it('should fail to get user due to user not found', async () => {
-    token = await tokenCreate();
-    const response = await postGraphQL(query, {id: 2});
-    expect(response.body.errors[0].message).to.equal('Usuário não cadastrado');
-  })
+    const response = await postGraphQL(query, { id: 2 });
+    expect(response.body.errors[0].message).deep.eq('Usuário não cadastrado');
+  });
 });
 
 describe('Login user mutation test', () => {
@@ -230,14 +223,29 @@ describe('Login user mutation test', () => {
     };
   });
 
-  it('should login and return the user token and details', async () => {
+  it('should login and return the user token and details with the rememberMe false', async () => {
     const response = await postGraphQL(mutation, input);
-    expect(response.statusCode).to.equal(200);
-    expect(response.body.data.login.token).to.be.a('string');
-    expect(response.body.data.login.user.id).to.be.a('number');
-    expect(response.body.data.login.user.name).to.equal('Teste');
-    expect(response.body.data.login.user.email).to.equal('test1@test.com');
-    expect(response.body.data.login.user.birthDate).to.equal('17/09/1991');
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.login.token).deep.a('string');
+    expect(response.body.data.login.user.id).deep.a('number');
+    expect(response.body.data.login.user.name).deep.eq('Teste');
+    expect(response.body.data.login.user.email).deep.eq('test1@test.com');
+    expect(response.body.data.login.user.birthDate).deep.eq('17/09/1991');
+    const tokenVerify = await jwt.verify(response.body.data.login.token, process.env.JWT_SECRET);
+    expect(tokenVerify.iat + 4 * 60 * 60).deep.eq(tokenVerify.exp);
+  });
+
+  it('should login and return the user token and details with the rememberMe true', async () => {
+    input.rememberMe = true;
+    const response = await postGraphQL(mutation, input);
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.login.token).deep.a('string');
+    expect(response.body.data.login.user.id).deep.a('number');
+    expect(response.body.data.login.user.name).deep.eq('Teste');
+    expect(response.body.data.login.user.email).deep.eq('test1@test.com');
+    expect(response.body.data.login.user.birthDate).deep.eq('17/09/1991');
+    const tokenVerify = await jwt.verify(response.body.data.login.token, process.env.JWT_SECRET);
+    expect(tokenVerify.iat + 7 * 24 * 60 * 60).deep.eq(tokenVerify.exp);
   });
 });
 
