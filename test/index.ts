@@ -84,7 +84,7 @@ describe('Create user mutation test', () => {
   it('should create an user in the test database and return his details', async () => {
     const response = await postGraphQL(mutation, input);
     expect(response.statusCode).deep.eq(200);
-    expect(response.body.data.createUser.id).deep.a('number');
+    expect(response.body.data.createUser.id).to.be.a('number');
     expect(response.body.data.createUser.name).deep.eq('Teste');
     expect(response.body.data.createUser.email).deep.eq('test1@test.com');
     expect(response.body.data.createUser.birthDate).deep.eq('17/09/1991');
@@ -92,12 +92,12 @@ describe('Create user mutation test', () => {
     const createdUser = await getRepository(User).findOne({
       id: response.body.data.createUser.id,
     });
-    expect(createdUser.id).deep.a('number');
+    expect(createdUser.id).to.be.a('number');
     expect(createdUser.id).deep.eq(response.body.data.createUser.id);
     expect(createdUser.name).deep.eq('Teste');
     expect(createdUser.email).deep.eq('test1@test.com');
     expect(createdUser.birthDate).deep.eq('17/09/1991');
-    expect(createdUser.password).deep.a('String');
+    expect(createdUser.password).to.be.a('String');
   });
 
   it('should fail to create user due to invalid e-mail', async () => {
@@ -185,7 +185,7 @@ describe('User details query test', () => {
   it('should get user details', async () => {
     const response = await postGraphQL(query, { id: 1 });
     expect(response.statusCode).deep.eq(200);
-    expect(response.body.data.user.id).deep.a('number');
+    expect(response.body.data.user.id).to.be.a('number');
     expect(response.body.data.user.name).deep.eq('Teste');
     expect(response.body.data.user.email).deep.eq('test1@test.com');
     expect(response.body.data.user.birthDate).deep.eq('17/09/1991');
@@ -226,8 +226,8 @@ describe('Login user mutation test', () => {
   it('should login and return the user token and details with the rememberMe false', async () => {
     const response = await postGraphQL(mutation, input);
     expect(response.statusCode).deep.eq(200);
-    expect(response.body.data.login.token).deep.a('string');
-    expect(response.body.data.login.user.id).deep.a('number');
+    expect(response.body.data.login.token).to.be.a('string');
+    expect(response.body.data.login.user.id).to.be.a('number');
     expect(response.body.data.login.user.name).deep.eq('Teste');
     expect(response.body.data.login.user.email).deep.eq('test1@test.com');
     expect(response.body.data.login.user.birthDate).deep.eq('17/09/1991');
@@ -239,8 +239,8 @@ describe('Login user mutation test', () => {
     input.rememberMe = true;
     const response = await postGraphQL(mutation, input);
     expect(response.statusCode).deep.eq(200);
-    expect(response.body.data.login.token).deep.a('string');
-    expect(response.body.data.login.user.id).deep.a('number');
+    expect(response.body.data.login.token).to.be.a('string');
+    expect(response.body.data.login.user.id).to.be.a('number');
     expect(response.body.data.login.user.name).deep.eq('Teste');
     expect(response.body.data.login.user.email).deep.eq('test1@test.com');
     expect(response.body.data.login.user.birthDate).deep.eq('17/09/1991');
