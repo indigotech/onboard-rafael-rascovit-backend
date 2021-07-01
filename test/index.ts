@@ -6,6 +6,7 @@ import { runServer, closeServer } from '../src/main';
 import { getRepository } from 'typeorm';
 import { User } from '../src/entity/user';
 import * as jwt from 'jsonwebtoken';
+import { seedDatabase } from './../src/seed/user-seed';
 
 let token: string = '';
 
@@ -17,13 +18,14 @@ function postGraphQL(queryOrMutation: string, input) {
 }
 
 function tokenCreate() {
-  return jwt.sign({ id: 1 }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: 51 }, process.env.JWT_SECRET, {
     expiresIn: '4h',
   });
 }
 
 before(async () => {
   await runServer();
+  await seedDatabase();
 });
 
 describe('Hello world query test', () => {
@@ -168,22 +170,22 @@ describe('User details query test', () => {
 
   it('should fail to get user due to token not found', async () => {
     token = '';
-    const response = await postGraphQL(query, { id: 1 });
+    const response = await postGraphQL(query, { id: 51 });
     expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
     expect(response.body.errors[0].message).deep.eq('Token not found');
   });
 
   it('should fail to get user due to invalid token', async () => {
-    token = await jwt.sign({ id: 1 }, 'invalidToken', {
+    token = await jwt.sign({ id: 51 }, 'invalidToken', {
       expiresIn: '4h',
     });
-    const response = await postGraphQL(query, { id: 1 });
+    const response = await postGraphQL(query, { id: 51 });
     expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
     expect(response.body.errors[0].message).deep.eq('Invalid token');
   });
 
   it('should get user details', async () => {
-    const response = await postGraphQL(query, { id: 1 });
+    const response = await postGraphQL(query, { id: 51 });
     expect(response.statusCode).deep.eq(200);
     expect(response.body.data.user.id).to.be.a('number');
     expect(response.body.data.user.name).deep.eq('Teste');
@@ -192,7 +194,7 @@ describe('User details query test', () => {
   });
 
   it('should fail to get user due to user not found', async () => {
-    const response = await postGraphQL(query, { id: 2 });
+    const response = await postGraphQL(query, { id: 52 });
     expect(response.body.errors[0].message).deep.eq('Usuário não cadastrado');
   });
 });
@@ -249,6 +251,103 @@ describe('Login user mutation test', () => {
   });
 });
 
+describe('Users list query test', () => {
+  const query = `
+    query Users($offset: Int, $limit: Int) {
+      users(offset: $offset, limit: $limit) {
+        users {
+          name
+          email
+          id
+          password
+          birthDate
+        }
+        count
+        pageInfo{
+          offset
+          limit
+          hasNextPage
+          hasPreviousPage
+        }
+      }
+    }
+  `;
+
+  let input: UsersListInput;
+
+  beforeEach(async () => {
+    token = await tokenCreate();
+    input = {
+      offset: 0,
+      limit: 10,
+    };
+  });
+
+  it('should fail to get users list due to token not found', async () => {
+    token = '';
+    const response = await postGraphQL(query, input);
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
+    expect(response.body.errors[0].message).deep.eq('Token not found');
+  });
+
+  it('should fail to get users list due to invalid token', async () => {
+    token = await jwt.sign({ id: 1 }, 'invalidToken', {
+      expiresIn: '4h',
+    });
+    const response = await postGraphQL(query, input);
+    expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
+    expect(response.body.errors[0].message).deep.eq('Invalid token');
+  });
+
+  it('should get users list with pagination info', async () => {
+    const response = await postGraphQL(query, {});
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.users.count).deep.eq(51);
+    expect(response.body.data.users.users.length).deep.eq(10);
+    expect(response.body.data.users.pageInfo.hasNextPage).deep.eq(true);
+    expect(response.body.data.users.pageInfo.hasPreviousPage).deep.eq(false);
+    expect(response.body.data.users.pageInfo.offset).deep.eq(0);
+    expect(response.body.data.users.pageInfo.limit).deep.eq(10);
+  });
+
+  it('should get users list with pagination info passing offset and limit params', async () => {
+    const response = await postGraphQL(query, input);
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.users.count).deep.eq(51);
+    expect(response.body.data.users.users.length).deep.eq(10);
+    expect(response.body.data.users.pageInfo.hasNextPage).deep.eq(true);
+    expect(response.body.data.users.pageInfo.hasPreviousPage).deep.eq(false);
+    expect(response.body.data.users.pageInfo.offset).deep.eq(0);
+    expect(response.body.data.users.pageInfo.limit).deep.eq(10);
+  });
+
+  it('should get users list with pagination info passing offset and limit params in the middle page', async () => {
+    input.limit = 10;
+    input.offset = 20;
+    const response = await postGraphQL(query, input);
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.users.count).deep.eq(51);
+    expect(response.body.data.users.users.length).deep.eq(10);
+    expect(response.body.data.users.pageInfo.hasNextPage).deep.eq(true);
+    expect(response.body.data.users.pageInfo.hasPreviousPage).deep.eq(true);
+    expect(response.body.data.users.pageInfo.offset).deep.eq(20);
+    expect(response.body.data.users.pageInfo.limit).deep.eq(10);
+  });
+
+  it('should get users list with pagination info passing offset and limit params in the last page', async () => {
+    input.limit = 15;
+    input.offset = 45;
+    const response = await postGraphQL(query, input);
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.users.count).deep.eq(51);
+    expect(response.body.data.users.users.length).deep.eq(6);
+    expect(response.body.data.users.pageInfo.hasNextPage).deep.eq(false);
+    expect(response.body.data.users.pageInfo.hasPreviousPage).deep.eq(true);
+    expect(response.body.data.users.pageInfo.offset).deep.eq(45);
+    expect(response.body.data.users.pageInfo.limit).deep.eq(15);
+  });
+});
+
 after(async () => {
   await getRepository(User).query('DROP TABLE "user"');
   closeServer();
@@ -265,4 +364,9 @@ export interface LoginInput {
   email: string;
   password: string;
   rememberMe: boolean;
+}
+
+export interface UsersListInput {
+  offset: number;
+  limit: number;
 }
