@@ -6,7 +6,13 @@ import { createConnection, getConnection } from 'typeorm';
 import { User } from './entity/user';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
-const server = new ApolloServer({ resolvers, typeDefs });
+const server = new ApolloServer({
+  resolvers,
+  typeDefs,
+  context: ({ req }) => ({
+    authToken: req.headers.authentication,
+  }),
+});
 
 export async function runServer() {
   const config: PostgresConnectionOptions = {
