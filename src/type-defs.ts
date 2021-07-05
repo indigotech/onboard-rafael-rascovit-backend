@@ -3,13 +3,57 @@ import { gql } from 'apollo-server';
 export default gql`
   type Query {
     hello: String
-    users(offset: Int = 0, limit: Int = 10): UsersQuery
-    user(id: Int): UserResponse
+    users(data: UsersInput): UsersQuery
+    user(data: UserInput): UserResponse
   }
 
   type Mutation {
-    createUser(name: String, email: String, password: String, birthDate: String): UserResponse
-    login(email: String, password: String, rememberMe: Boolean): LoginResponse
+    createUser(data: CreateUserInput): UserResponse
+    login(data: LoginInput): LoginResponse
+  }
+
+  input UsersInput {
+    offset: Int
+    limit: Int
+  }
+
+  input UserInput {
+    id: Int!
+  }
+
+  input AddressInput {
+    CEP: String!
+    street: String!
+    streetNumber: Int!
+    complement: String
+    neighborhood: String!
+    city: String!
+    state: String!
+  }
+
+  input CreateUserInput {
+    name: String!
+    email: String!
+    password: String!
+    birthDate: String
+    addresses: [AddressInput]
+  }
+
+  input LoginInput {
+    email: String!
+    password: String!
+    rememberMe: Boolean
+  }
+
+  type AddressType {
+    id: Int
+    CEP: String
+    street: String
+    streetNumber: Int
+    neighborhood: String
+    city: String
+    state: String
+    complement: String
   }
 
   type LoginResponse {
@@ -23,6 +67,7 @@ export default gql`
     email: String
     password: String
     birthDate: String
+    addresses: [AddressType]
   }
 
   type UsersQuery {
