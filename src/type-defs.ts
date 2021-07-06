@@ -3,7 +3,7 @@ import { gql } from 'apollo-server';
 export default gql`
   type Query {
     hello: String
-    users: UsersQuery
+    users(offset: Int = 0, limit: Int = 10): UsersQuery
     user(id: Int): UserResponse
   }
 
@@ -27,5 +27,14 @@ export default gql`
 
   type UsersQuery {
     users: [UserResponse]
+    count: Int
+    pageInfo: PageInfoType
+  }
+
+  type PageInfoType {
+    offset: Int
+    limit: Int
+    hasNextPage: Boolean
+    hasPreviousPage: Boolean
   }
 `;

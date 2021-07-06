@@ -16,7 +16,7 @@ export async function seedAdmin() {
 export async function seedDatabase() {
   for (let i = 1; i <= 50; i++) {
     const user = new User();
-    user.name = `Taqtile user ${i}`;
+    user.name = i < 10 ? `Taqtile user 0${i}` :`Taqtile user ${i}`;
     user.email = `taqtile.user${i}@taqtile.com.br`;
     user.password = await bcrypt.hash('1234qwer', saltRounds);
     user.birthDate = '17/09/1991';

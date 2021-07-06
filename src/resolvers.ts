@@ -23,9 +23,22 @@ export default {
     },
     users: async (_source, args, context) => {
       await verifyToken(context.authToken);
-      const response = await getRepository(User).find();
+      const [list, count] = await getRepository(User).findAndCount({
+        order: { name: 'ASC' },
+        skip: args.offset,
+        take: args.limit,
+      });
+      const hasPreviousPage = args.offset > 0;
+      const hasNextPage = args.offset + args.limit < count;
       return {
-        users: response,
+        users: list,
+        count: count,
+        pageInfo: {
+          offset: args.offset,
+          limit: args.limit,
+          hasNextPage: hasNextPage,
+          hasPreviousPage: hasPreviousPage,
+        },
       };
     },
   },
