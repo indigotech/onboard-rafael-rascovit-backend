@@ -22,7 +22,7 @@ export default gql`
   }
 
   input AddressInput {
-    CEP: String!
+    cep: String!
     street: String!
     streetNumber: Int!
     complement: String
@@ -47,7 +47,7 @@ export default gql`
 
   type AddressType {
     id: Int
-    CEP: String
+    cep: String
     street: String
     streetNumber: Int
     neighborhood: String

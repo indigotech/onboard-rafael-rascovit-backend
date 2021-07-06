@@ -7,7 +7,7 @@ export class Address {
   id: number;
 
   @Column()
-  CEP: string;
+  cep: string;
 
   @Column()
   street: string;
@@ -16,7 +16,7 @@ export class Address {
   streetNumber: number;
 
   @Column({ nullable: true })
-  complement: string;
+  complement?: string;
 
   @Column()
   neighborhood: string;

@@ -2,7 +2,7 @@ import { getRepository } from 'typeorm';
 import { User } from '../entity/user';
 import * as bcrypt from 'bcrypt';
 
-const saltRounds = 10;
+const saltRounds = 1;
 
 export async function seedAdmin() {
   const user = new User();
@@ -23,5 +23,5 @@ export async function seedDatabase() {
     user.birthDate = '17/09/1991';
     users.push(user);
   }
-  return await getRepository(User).save(users);
+  return await getRepository(User).manager.save(users);
 }

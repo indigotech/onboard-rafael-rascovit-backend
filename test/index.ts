@@ -54,7 +54,7 @@ describe('Create user mutation test', () => {
         birthDate
         addresses{
           id
-          CEP
+          cep
           street
           streetNumber
           neighborhood
@@ -177,7 +177,7 @@ describe('Create user with addresses mutation test', () => {
         birthDate
         addresses{
           id
-          CEP
+          cep
           street
           streetNumber
           neighborhood
@@ -200,7 +200,7 @@ describe('Create user with addresses mutation test', () => {
       birthDate: '17/09/1991',
       addresses: [
         {
-          CEP: '71909180',
+          cep: '71909180',
           street: 'quadra 104',
           streetNumber: 1,
           complement: 'Lote 10',
@@ -209,7 +209,7 @@ describe('Create user with addresses mutation test', () => {
           state: 'DF',
         },
         {
-          CEP: '71909180',
+          cep: '71909180',
           street: 'quadra 104',
           streetNumber: 2,
           complement: null,
@@ -231,7 +231,7 @@ describe('Create user with addresses mutation test', () => {
     expect(response.body.data.createUser.addresses).deep.eq([
       {
         id: 1,
-        CEP: '71909180',
+        cep: '71909180',
         street: 'quadra 104',
         streetNumber: 1,
         complement: 'Lote 10',
@@ -241,7 +241,7 @@ describe('Create user with addresses mutation test', () => {
       },
       {
         id: 2,
-        CEP: '71909180',
+        cep: '71909180',
         street: 'quadra 104',
         streetNumber: 2,
         complement: null,
@@ -266,7 +266,7 @@ describe('Create user with addresses mutation test', () => {
     expect(createdUser.addresses).deep.eq([
       {
         id: 1,
-        CEP: '71909180',
+        cep: '71909180',
         street: 'quadra 104',
         streetNumber: 1,
         complement: 'Lote 10',
@@ -276,7 +276,7 @@ describe('Create user with addresses mutation test', () => {
       },
       {
         id: 2,
-        CEP: '71909180',
+        cep: '71909180',
         street: 'quadra 104',
         streetNumber: 2,
         complement: null,
@@ -298,7 +298,7 @@ describe('User details query test', () => {
         birthDate
         addresses {
           id
-          CEP
+          cep
           street
           streetNumber
           neighborhood
@@ -363,7 +363,7 @@ describe('Login user mutation test', () => {
           birthDate
           addresses {
             id
-            CEP
+            cep
             street
             streetNumber
             neighborhood
@@ -425,7 +425,7 @@ describe('Users list query test', () => {
           birthDate
           addresses {
             id
-            CEP
+            cep
             street
             streetNumber
             neighborhood
@@ -535,7 +535,7 @@ export interface CreateUserInput {
 }
 
 export interface AddressInput {
-  CEP: string;
+  cep: string;
   street: string;
   streetNumber: number;
   complement: string;
