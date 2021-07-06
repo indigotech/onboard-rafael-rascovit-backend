@@ -7,13 +7,14 @@ import { getRepository } from 'typeorm';
 import { User } from '../src/entity/user';
 import * as jwt from 'jsonwebtoken';
 import { seedDatabase } from './../src/seed/user-seed';
+import { Address } from '../src/entity/address';
 
 let token: string = '';
 
 function postGraphQL(queryOrMutation: string, input) {
   return request('localhost:4000')
     .post('/')
-    .send({ query: queryOrMutation, variables: input })
+    .send({ query: queryOrMutation, variables: { data: input } })
     .set({ Authentication: token });
 }
 
@@ -44,18 +45,28 @@ describe('Hello world query test', () => {
 
 describe('Create user mutation test', () => {
   const mutation = `
-    mutation CreateUser($name: String!, $email: String!, $password: String!, $birthDate: String!) {
-      createUser(name: $name, email: $email, password: $password, birthDate: $birthDate) {
+    mutation CreateUser($data: CreateUserInput) {
+      createUser(data: $data) {
         id
         name
         email
         password
         birthDate
+        addresses{
+          id
+          cep
+          street
+          streetNumber
+          neighborhood
+          city
+          state
+          complement
+        }
       }
     }
   `;
 
-  let input: UserInput;
+  let input: CreateUserInput;
 
   beforeEach(async () => {
     token = await tokenCreate();
@@ -91,9 +102,12 @@ describe('Create user mutation test', () => {
     expect(response.body.data.createUser.email).deep.eq('test1@test.com');
     expect(response.body.data.createUser.birthDate).deep.eq('17/09/1991');
 
-    const createdUser = await getRepository(User).findOne({
-      id: response.body.data.createUser.id,
-    });
+    const createdUser = await getRepository(User).findOne(
+      {
+        id: response.body.data.createUser.id,
+      },
+      { relations: ['addresses'] },
+    );
     expect(createdUser.id).to.be.a('number');
     expect(createdUser.id).deep.eq(response.body.data.createUser.id);
     expect(createdUser.name).deep.eq('Teste');
@@ -152,25 +166,162 @@ describe('Create user mutation test', () => {
   });
 });
 
-describe('User details query test', () => {
-  const query = `
-    query User($id: Int!) {
-      user(id: $id){
+describe('Create user with addresses mutation test', () => {
+  const mutation = `
+    mutation CreateUser($data: CreateUserInput) {
+      createUser(data: $data) {
         id
         name
         email
+        password
         birthDate
+        addresses{
+          id
+          cep
+          street
+          streetNumber
+          neighborhood
+          city
+          state
+          complement
+        }
       }
     }
   `;
 
+  let input: CreateUserInput;
+
   beforeEach(async () => {
     token = await tokenCreate();
+    input = {
+      name: 'Teste 2',
+      email: 'test2@test.com',
+      password: 'test123',
+      birthDate: '17/09/1991',
+      addresses: [
+        {
+          cep: '71909180',
+          street: 'quadra 104',
+          streetNumber: 1,
+          complement: 'Lote 10',
+          neighborhood: 'Águas Claras',
+          city: 'Brasília',
+          state: 'DF',
+        },
+        {
+          cep: '71909180',
+          street: 'quadra 104',
+          streetNumber: 2,
+          complement: null,
+          neighborhood: 'Águas Claras',
+          city: 'Brasília',
+          state: 'DF',
+        },
+      ],
+    };
+  });
+
+  it('should create an user in the test database and return his details with the addresses', async () => {
+    const response = await postGraphQL(mutation, input);
+    expect(response.statusCode).deep.eq(200);
+    expect(response.body.data.createUser.id).to.be.a('number');
+    expect(response.body.data.createUser.name).deep.eq('Teste 2');
+    expect(response.body.data.createUser.email).deep.eq('test2@test.com');
+    expect(response.body.data.createUser.birthDate).deep.eq('17/09/1991');
+    expect(response.body.data.createUser.addresses).deep.eq([
+      {
+        id: 1,
+        cep: '71909180',
+        street: 'quadra 104',
+        streetNumber: 1,
+        complement: 'Lote 10',
+        neighborhood: 'Águas Claras',
+        city: 'Brasília',
+        state: 'DF',
+      },
+      {
+        id: 2,
+        cep: '71909180',
+        street: 'quadra 104',
+        streetNumber: 2,
+        complement: null,
+        neighborhood: 'Águas Claras',
+        city: 'Brasília',
+        state: 'DF',
+      },
+    ]);
+
+    const createdUser = await getRepository(User).findOne(
+      {
+        id: response.body.data.createUser.id,
+      },
+      { relations: ['addresses'] },
+    );
+    expect(createdUser.id).to.be.a('number');
+    expect(createdUser.id).deep.eq(response.body.data.createUser.id);
+    expect(createdUser.name).deep.eq('Teste 2');
+    expect(createdUser.email).deep.eq('test2@test.com');
+    expect(createdUser.birthDate).deep.eq('17/09/1991');
+    expect(createdUser.password).to.be.a('String');
+    expect(createdUser.addresses).deep.eq([
+      {
+        id: 1,
+        cep: '71909180',
+        street: 'quadra 104',
+        streetNumber: 1,
+        complement: 'Lote 10',
+        neighborhood: 'Águas Claras',
+        city: 'Brasília',
+        state: 'DF',
+      },
+      {
+        id: 2,
+        cep: '71909180',
+        street: 'quadra 104',
+        streetNumber: 2,
+        complement: null,
+        neighborhood: 'Águas Claras',
+        city: 'Brasília',
+        state: 'DF',
+      },
+    ]);
+  });
+});
+
+describe('User details query test', () => {
+  const query = `
+    query User($data: UserInput!) {
+      user(data: $data){
+        id
+        name
+        email
+        birthDate
+        addresses {
+          id
+          cep
+          street
+          streetNumber
+          neighborhood
+          city
+          state
+          complement
+        }
+      }
+    }
+  `;
+
+  let input: UserInput;
+
+  beforeEach(async () => {
+    token = await tokenCreate();
+    input = {
+      id: 51,
+    };
   });
 
   it('should fail to get user due to token not found', async () => {
     token = '';
-    const response = await postGraphQL(query, { id: 51 });
+    const response = await postGraphQL(query, input);
     expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
     expect(response.body.errors[0].message).deep.eq('Token not found');
   });
@@ -179,13 +330,13 @@ describe('User details query test', () => {
     token = await jwt.sign({ id: 51 }, 'invalidToken', {
       expiresIn: '4h',
     });
-    const response = await postGraphQL(query, { id: 51 });
+    const response = await postGraphQL(query, input);
     expect(response.body.errors[0].extensions.exception.code).deep.eq(401);
     expect(response.body.errors[0].message).deep.eq('Invalid token');
   });
 
   it('should get user details', async () => {
-    const response = await postGraphQL(query, { id: 51 });
+    const response = await postGraphQL(query, input);
     expect(response.statusCode).deep.eq(200);
     expect(response.body.data.user.id).to.be.a('number');
     expect(response.body.data.user.name).deep.eq('Teste');
@@ -194,21 +345,32 @@ describe('User details query test', () => {
   });
 
   it('should fail to get user due to user not found', async () => {
-    const response = await postGraphQL(query, { id: 52 });
+    input.id = -1;
+    const response = await postGraphQL(query, input);
     expect(response.body.errors[0].message).deep.eq('Usuário não cadastrado');
   });
 });
 
 describe('Login user mutation test', () => {
   const mutation = `
-    mutation Login($email: String!, $password: String!, $rememberMe: Boolean!) {
-      login(email: $email, password: $password, rememberMe: $rememberMe) {
+    mutation Login($data: LoginInput!) {
+      login(data: $data) {
         user{
           id
           name
           email
           password
           birthDate
+          addresses {
+            id
+            cep
+            street
+            streetNumber
+            neighborhood
+            city
+            state
+            complement
+          }
         }
         token
       }
@@ -253,14 +415,24 @@ describe('Login user mutation test', () => {
 
 describe('Users list query test', () => {
   const query = `
-    query Users($offset: Int, $limit: Int) {
-      users(offset: $offset, limit: $limit) {
+    query Users($data: UsersInput) {
+      users(data: $data) {
         users {
           name
           email
           id
           password
           birthDate
+          addresses {
+            id
+            cep
+            street
+            streetNumber
+            neighborhood
+            city
+            state
+            complement
+          }
         }
         count
         pageInfo{
@@ -273,7 +445,7 @@ describe('Users list query test', () => {
     }
   `;
 
-  let input: UsersListInput;
+  let input: UsersInput;
 
   beforeEach(async () => {
     token = await tokenCreate();
@@ -302,7 +474,7 @@ describe('Users list query test', () => {
   it('should get users list with pagination info', async () => {
     const response = await postGraphQL(query, {});
     expect(response.statusCode).deep.eq(200);
-    expect(response.body.data.users.count).deep.eq(51);
+    expect(response.body.data.users.count).deep.eq(52);
     expect(response.body.data.users.users.length).deep.eq(10);
     expect(response.body.data.users.pageInfo.hasNextPage).deep.eq(true);
     expect(response.body.data.users.pageInfo.hasPreviousPage).deep.eq(false);
@@ -313,7 +485,7 @@ describe('Users list query test', () => {
   it('should get users list with pagination info passing offset and limit params', async () => {
     const response = await postGraphQL(query, input);
     expect(response.statusCode).deep.eq(200);
-    expect(response.body.data.users.count).deep.eq(51);
+    expect(response.body.data.users.count).deep.eq(52);
     expect(response.body.data.users.users.length).deep.eq(10);
     expect(response.body.data.users.pageInfo.hasNextPage).deep.eq(true);
     expect(response.body.data.users.pageInfo.hasPreviousPage).deep.eq(false);
@@ -326,7 +498,7 @@ describe('Users list query test', () => {
     input.offset = 20;
     const response = await postGraphQL(query, input);
     expect(response.statusCode).deep.eq(200);
-    expect(response.body.data.users.count).deep.eq(51);
+    expect(response.body.data.users.count).deep.eq(52);
     expect(response.body.data.users.users.length).deep.eq(10);
     expect(response.body.data.users.pageInfo.hasNextPage).deep.eq(true);
     expect(response.body.data.users.pageInfo.hasPreviousPage).deep.eq(true);
@@ -335,29 +507,41 @@ describe('Users list query test', () => {
   });
 
   it('should get users list with pagination info passing offset and limit params in the last page', async () => {
-    input.limit = 15;
-    input.offset = 45;
+    input.limit = 10;
+    input.offset = 50;
     const response = await postGraphQL(query, input);
     expect(response.statusCode).deep.eq(200);
-    expect(response.body.data.users.count).deep.eq(51);
-    expect(response.body.data.users.users.length).deep.eq(6);
+    expect(response.body.data.users.count).deep.eq(52);
+    expect(response.body.data.users.users.length).deep.eq(2);
     expect(response.body.data.users.pageInfo.hasNextPage).deep.eq(false);
     expect(response.body.data.users.pageInfo.hasPreviousPage).deep.eq(true);
-    expect(response.body.data.users.pageInfo.offset).deep.eq(45);
-    expect(response.body.data.users.pageInfo.limit).deep.eq(15);
+    expect(response.body.data.users.pageInfo.offset).deep.eq(50);
+    expect(response.body.data.users.pageInfo.limit).deep.eq(10);
   });
 });
 
 after(async () => {
+  await getRepository(Address).query('DROP TABLE "address"');
   await getRepository(User).query('DROP TABLE "user"');
   closeServer();
 });
 
-export interface UserInput {
+export interface CreateUserInput {
   name: string;
   email: string;
   password: string;
   birthDate: string;
+  addresses?: AddressInput[];
+}
+
+export interface AddressInput {
+  cep: string;
+  street: string;
+  streetNumber: number;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
 }
 
 export interface LoginInput {
@@ -366,7 +550,11 @@ export interface LoginInput {
   rememberMe: boolean;
 }
 
-export interface UsersListInput {
+export interface UsersInput {
   offset: number;
   limit: number;
+}
+
+export interface UserInput {
+  id: number;
 }

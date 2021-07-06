@@ -5,6 +5,7 @@ import 'reflect-metadata';
 import { createConnection, getConnection } from 'typeorm';
 import { User } from './entity/user';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { Address } from './entity/address';
 
 const server = new ApolloServer({
   resolvers,
@@ -18,7 +19,7 @@ export async function runServer() {
   const config: PostgresConnectionOptions = {
     type: 'postgres',
     url: process.env.DATABASE_URL,
-    entities: [User],
+    entities: [User, Address],
     synchronize: true,
     logging: false,
   };
